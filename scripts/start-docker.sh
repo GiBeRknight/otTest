@@ -23,16 +23,20 @@ cat > /etc/docker/daemon.json <<'JSON'
 }
 JSON
 
-echo "==> Starting Docker daemon..."
-pkill dockerd 2>/dev/null || true
-sleep 2
-nohup dockerd >/var/log/dockerd.log 2>&1 &
+echo "==> Stopping any running Docker daemons..."
+pkill -x dockerd 2>/dev/null || true
+sleep 3
+rm -f /var/run/docker.sock
+
+echo "==> Starting Docker daemon (29.2.1)..."
+nohup /usr/bin/dockerd >/var/log/dockerd.log 2>&1 &
+DOCKERD_PID=$!
 
 echo "==> Waiting for Docker to be ready..."
-for i in $(seq 1 15); do
-    if docker info >/dev/null 2>&1; then
+for i in $(seq 1 20); do
+    if /usr/bin/docker info >/dev/null 2>&1; then
         echo "==> Docker is up!"
-        docker info | grep "Server Version"
+        /usr/bin/docker info | grep "Server Version"
         exit 0
     fi
     sleep 2
