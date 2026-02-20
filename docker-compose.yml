@@ -5,6 +5,7 @@ services:
     image: mariadb:10.11
     container_name: otrs-db
     restart: unless-stopped
+    network_mode: host
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${OTRS_DB_NAME:-otrs}
@@ -13,36 +14,30 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./config/mysql.cnf:/etc/mysql/conf.d/otrs.cnf:ro
+      - ./config/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
 
   znuny:
-    image: znuny/znuny:latest
+    image: mgcred/znuny:latest
     container_name: otrs-app
     restart: unless-stopped
+    network_mode: host
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${HTTP_PORT:-8080}:80"
     environment:
-      ZNUNY_DB_HOST: db
-      ZNUNY_DB_PORT: "3306"
-      ZNUNY_DB_NAME: ${OTRS_DB_NAME:-otrs}
-      ZNUNY_DB_USER: ${OTRS_DB_USER:-otrs}
-      ZNUNY_DB_PASSWORD: ${OTRS_DB_PASSWORD:?OTRS_DB_PASSWORD is required}
-      ZNUNY_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-      ZNUNY_SYSTEM_EMAIL: ${SYSTEM_EMAIL}
-      ZNUNY_ORGANIZATION: ${ORGANIZATION:-My Company}
+      OTRS_DB_NAME: ${OTRS_DB_NAME:-otrs}
+      OTRS_DB_USER: ${OTRS_DB_USER:-otrs}
+      OTRS_DB_PASSWORD: ${OTRS_DB_PASSWORD:?OTRS_DB_PASSWORD is required}
     volumes:
-      - znuny_data:/opt/otrs/var
-      - znuny_config:/opt/otrs/Kernel
+      - znuny_data:/opt/znuny-6.5.2/var
+      - ./config/znuny/ZZZCustom.pm:/opt/znuny-6.5.2/Kernel/Config/Files/ZZZCustom.pm:ro
 
 volumes:
   db_data:
   znuny_data:
-  znuny_config:
