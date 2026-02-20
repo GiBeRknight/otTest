@@ -1,0 +1,13 @@
+# Sensitive credentials — never commit
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Docker leftovers
+*.log
